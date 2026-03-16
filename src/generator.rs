@@ -6,6 +6,9 @@ use chrono::Utc;
 
 use crate::{Snowflake, DISCORD_EPOCH};
 
+#[cfg(feature = "tracing")]
+use tracing::{instrument, event, Level};
+
 #[derive(Debug, Clone, Copy)]
 struct CounterState {
     counter: u64,
@@ -44,11 +47,19 @@ impl<const EPOCH: u64> SnowflakeGenerator<EPOCH> {
         SnowflakeGenerator::new((worker_id as u16) << 5 | (process_id as u16))
     }
 
+    #[cfg_attr(feature = "tracing", instrument(name = "SnowflakeGenerator::generate", level="trace"))]
     pub fn generate(&self) -> Snowflake {
         let (timestamp, counter) = {
             let mut state = match STATE.lock() {
                 Ok(state) => state,
                 Err(err) => {
+                    #[cfg(feature = "tracing")]
+                    event!(Level::WARN,
+                        "Snowflake counter mutex was poisoned. \
+                        This should not happen, so if you see this report it. \
+                        Snowflake generation will still function, but this might cause slowdowns."
+                    );
+
                     let mut poisoned = err.into_inner();
                     poisoned.reset();
                     STATE.clear_poison();
@@ -59,6 +70,13 @@ impl<const EPOCH: u64> SnowflakeGenerator<EPOCH> {
             let mut timestamp = epoch_timestamp_millis(EPOCH);
 
             if timestamp < state.last_timestamp {
+                #[cfg(feature = "tracing")]
+                event!(Level::WARN,
+                    "Unix timestamp has gone backwards.\
+                    This is likely a bug in either this crate or chrono.\
+                    Snowflake generation will still function."
+                );
+
                 // time has moved backwards, somehow
                 // if this happens it's probably an issue with chrono,
                 // but regardless the best way to handle it is a bit of latency
@@ -70,6 +88,11 @@ impl<const EPOCH: u64> SnowflakeGenerator<EPOCH> {
                 state.counter = (state.counter + 1) & 0xFFF;
                 // if it does, we need to wait until the next ms to continue generating ids
                 if state.counter == 0 {
+                    #[cfg(feature = "tracing")]
+                    event!(Level::DEBUG,
+                        "Snowflake counter has rolled over, introducing a slight delay"
+                    );
+
                     timestamp = wait_for_next_ms(timestamp, state.last_timestamp, EPOCH);
                 }
             } else {
@@ -81,12 +104,17 @@ impl<const EPOCH: u64> SnowflakeGenerator<EPOCH> {
 
             (timestamp, state.counter)
         };
-        
-        Snowflake::from(
+
+        let flake = Snowflake::from(
             (timestamp << 22)
             | (self.unique_id << 12)
             | (counter & 0xFFF)
-        )
+        );
+
+        #[cfg(feature = "tracing")]
+        event!(Level::TRACE, timestamp, unique_id = self.unique_id, counter, epoch = EPOCH, flake = flake.into_inner(), "Generated snowflake");
+
+        flake
     }
 }
 

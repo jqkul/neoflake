@@ -37,6 +37,10 @@ impl<const EPOCH: u64> Snowflake<EPOCH> {
     pub fn increment(self) -> u16 {
         (self.0 & 0xFFF) as u16
     }
+
+    pub fn into_inner(self) -> u64 {
+        self.0
+    }
 }
 
 impl From<u64> for Snowflake {
