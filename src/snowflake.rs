@@ -9,16 +9,16 @@ use crate::DISCORD_EPOCH;
 pub struct Snowflake<const EPOCH: u64 = DISCORD_EPOCH>(u64);
 
 impl<const EPOCH: u64> Snowflake<EPOCH> {
-    pub fn timestamp_millis_custom(self) -> u64 {
+    pub fn timestamp(self) -> u64 {
         self.0 >> 22
     }
 
-    pub fn timestamp_millis_unix(self) -> u64 {
-        self.timestamp_millis_custom().checked_add(EPOCH).expect("Should not happen for 100 years!")
+    pub fn timestamp_unix(self) -> u64 {
+        self.timestamp().checked_add(EPOCH).expect("Should not happen for 100 years!")
     }
 
     pub fn time(self) -> Result<DateTime<Utc>, MalformedSnowflakeError> {
-        DateTime::from_timestamp_millis(self.timestamp_millis_unix() as i64)
+        DateTime::from_timestamp_millis(self.timestamp_unix() as i64)
             .ok_or(MalformedSnowflakeError(self.0))
     }
 
