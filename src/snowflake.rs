@@ -22,16 +22,16 @@ impl<const EPOCH: u64> Snowflake<EPOCH> {
             .ok_or(MalformedSnowflakeError(self.0))
     }
 
+    pub fn unique_id(self) -> u16 {
+        ((self.0 & 0x3FF000) >> 12) as u16
+    }
+
     pub fn worker_id(self) -> u8 {
         ((self.0 & 0x3E0000) >> 17) as u8
     }
 
     pub fn process_id(self) -> u8 {
         ((self.0 & 0x1F000) >> 12) as u8
-    }
-
-    pub fn unique_id(self) -> u16 {
-        ((self.0 & 0x3FF000) >> 12) as u16
     }
 
     pub fn increment(self) -> u16 {
