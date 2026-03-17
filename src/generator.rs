@@ -19,7 +19,7 @@ pub struct SnowflakeGenerator<const EPOCH: u64 = DISCORD_EPOCH> {
 }
 
 impl<const EPOCH: u64> SnowflakeGenerator<EPOCH> {
-    pub fn new(unique_id: u16) -> SnowflakeGenerator<EPOCH> {
+    pub const fn new(unique_id: u16) -> SnowflakeGenerator<EPOCH> {
         SnowflakeGenerator {
             unique_id: (unique_id & 0x3FF) as u64,
             state_mutex: Mutex::new(CounterState {
@@ -29,7 +29,7 @@ impl<const EPOCH: u64> SnowflakeGenerator<EPOCH> {
         }
     }
 
-    pub fn from_worker_and_process_ids(worker_id: u8, process_id: u8) -> SnowflakeGenerator<EPOCH> {
+    pub const fn from_worker_and_process_ids(worker_id: u8, process_id: u8) -> SnowflakeGenerator<EPOCH> {
         SnowflakeGenerator::new(((worker_id & 0b11111) as u16) << 5 | ((process_id & 0b11111) as u16))
     }
 
