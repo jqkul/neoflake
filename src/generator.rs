@@ -133,3 +133,66 @@ fn wait_for_next_ms(mut current: u64, target: u64, epoch: u64) -> u64 {
     }
     current
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{DISCORD_EPOCH, TWITTER_EPOCH, Snowflake};
+
+    const BATCH_SIZE_LARGE: usize = 100_000;
+
+    fn max_speed_batch<const EPOCH: u64>(size: usize, generator: &SnowflakeGenerator<EPOCH>) -> Vec<Snowflake<EPOCH>> {
+        // pre-allocate and pre-fill the vec so there's as little overhead between generated snowflakes
+        let mut results = vec![Snowflake::<EPOCH>::from(0); size];
+
+        for i in 0..size {
+            results[i] = generator.generate();
+        }
+        results
+    }
+
+    mod uniqueness {
+        use super::*;
+        use std::collections::HashSet;
+        
+        #[test]
+        fn max_speed_single_threaded() {
+            let generator = SnowflakeGenerator::new(0);
+            let flakes = max_speed_batch(BATCH_SIZE_LARGE, &generator);
+
+            let mut set: HashSet<Snowflake> = HashSet::new();
+            for flake in flakes {
+                assert!(set.insert(flake));
+            }
+        }
+
+        #[test]
+        fn max_speed_multi_threaded() {
+            use std::thread::{available_parallelism, spawn, JoinHandle};
+
+            let n_cores = available_parallelism()
+                .expect("Cannot get available parallelism, cannot test multithreaded generation")
+                .get();
+            if n_cores == 1 {
+                panic!("Only 1 thread available on this machine, cannot test multithreaded generation");
+            }
+
+            static GEN: SnowflakeGenerator = SnowflakeGenerator::new(0);
+
+            let mut handles: Vec<JoinHandle<Vec<Snowflake>>> = Vec::new();
+
+            for _ in 0..n_cores {
+                handles.push(spawn(|| {
+                    max_speed_batch(BATCH_SIZE_LARGE, &GEN)
+                }));
+            }
+
+            let mut set: HashSet<Snowflake> = HashSet::new();
+            for handle in handles {
+                for flake in handle.join().unwrap() {
+                    assert!(set.insert(flake));
+                }
+            }
+        }
+    }
+}
