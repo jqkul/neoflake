@@ -36,7 +36,7 @@ pub const UNIX_EPOCH: u64 = 0;
 mod snowflake;
 mod generator;
 
-pub use snowflake::Snowflake;
+pub use snowflake::{Snowflake, InvalidTimestampError};
 pub use generator::SnowflakeGenerator;
 
 /// A macro to automate a common use case.

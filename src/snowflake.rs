@@ -44,9 +44,13 @@ impl<const EPOCH: u64> Snowflake<EPOCH> {
     }
 
     /// Gets the snowflake's embedded timestamp as a `DateTime` from the [`chrono`](https://docs.rs/chrono) crate.
-    pub fn time(self) -> Result<DateTime<Utc>, MalformedSnowflakeError> {
-        DateTime::from_timestamp_millis(self.timestamp_unix() as i64)
-            .ok_or(MalformedSnowflakeError(self.0))
+    pub fn time(self) -> Result<DateTime<Utc>, InvalidTimestampError> {
+        DateTime::from_timestamp_millis(
+                self.timestamp_unix()
+                .try_into()
+                .map_err(|_| InvalidTimestampError(self.timestamp_unix()))?
+            )
+            .ok_or(InvalidTimestampError(self.0))
     }
 
     /// Gets the unique id of the [`SnowflakeGenerator`](crate::SnowflakeGenerator) that generated this snowflake.
@@ -93,13 +97,6 @@ impl<const EPOCH: u64> std::str::FromStr for Snowflake<EPOCH> {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct MalformedSnowflakeError(u64);
-
-impl std::fmt::Display for MalformedSnowflakeError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Malformed snowflake: {}", self.0)
-    }
-}
-
-impl std::error::Error for MalformedSnowflakeError {}
+#[derive(Debug, Clone, Copy, thiserror::Error)]
+#[error("invalid snowflake timestamp {0}")]
+pub struct InvalidTimestampError(u64);
