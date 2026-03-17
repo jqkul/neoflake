@@ -9,48 +9,34 @@ use crate::{Snowflake, DISCORD_EPOCH};
 #[cfg(feature = "tracing")]
 use tracing::{instrument, event, Level};
 
-#[derive(Debug, Clone, Copy)]
-struct CounterState {
-    counter: u64,
-    last_timestamp: u64
-}
-
-impl CounterState {
-    fn reset(&mut self) {
-        // The only way this would end up being called is if Utc::now() panics,
-        // so it's fine if it's a little unoptimal
-        sleep(Duration::from_millis(1));
-        self.counter = 0;
-        self.last_timestamp = 0;
-    }
-}
-
-static STATE: Mutex<CounterState> = Mutex::new(CounterState {
-    counter: 0, 
-    last_timestamp: 0,
-});
-
 /// A generator for Discord-style snowflakes.
 /// 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug)]
 pub struct SnowflakeGenerator<const EPOCH: u64 = DISCORD_EPOCH> {
     // 10 bits, represents the worker and process id of Discord's snowflakes
-    unique_id: u64
+    unique_id: u64,
+    state_mutex: Mutex<CounterState>
 }
 
 impl<const EPOCH: u64> SnowflakeGenerator<EPOCH> {
     pub fn new(unique_id: u16) -> SnowflakeGenerator<EPOCH> {
-        SnowflakeGenerator { unique_id: unique_id as u64 & 0x3FF }
+        SnowflakeGenerator {
+            unique_id: (unique_id & 0x3FF) as u64,
+            state_mutex: Mutex::new(CounterState {
+                counter: 0,
+                last_timestamp: 0
+            })
+        }
     }
 
     pub fn from_worker_and_process_ids(worker_id: u8, process_id: u8) -> SnowflakeGenerator<EPOCH> {
-        SnowflakeGenerator::new((worker_id as u16) << 5 | (process_id as u16))
+        SnowflakeGenerator::new(((worker_id & 0b11111) as u16) << 5 | ((process_id & 0b11111) as u16))
     }
 
     #[cfg_attr(feature = "tracing", instrument(name = "SnowflakeGenerator::generate", level="trace"))]
     pub fn generate(&self) -> Snowflake {
         let (timestamp, counter) = {
-            let mut state = match STATE.lock() {
+            let mut state = match self.state_mutex.lock() {
                 Ok(state) => state,
                 Err(err) => {
                     #[cfg(feature = "tracing")]
@@ -62,7 +48,7 @@ impl<const EPOCH: u64> SnowflakeGenerator<EPOCH> {
 
                     let mut poisoned = err.into_inner();
                     poisoned.reset();
-                    STATE.clear_poison();
+                    self.state_mutex.clear_poison();
                     poisoned
                 }
             };
@@ -115,6 +101,22 @@ impl<const EPOCH: u64> SnowflakeGenerator<EPOCH> {
         event!(Level::TRACE, timestamp, unique_id = self.unique_id, counter, epoch = EPOCH, flake = flake.into_inner(), "Generated snowflake");
 
         flake
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+struct CounterState {
+    counter: u64,
+    last_timestamp: u64
+}
+
+impl CounterState {
+    fn reset(&mut self) {
+        // The only way this would end up being called is if Utc::now() panics,
+        // so it's fine if it's a little unoptimal
+        sleep(Duration::from_millis(1));
+        self.counter = 0;
+        self.last_timestamp = 0;
     }
 }
 
