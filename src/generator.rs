@@ -34,7 +34,7 @@ impl<const EPOCH: u64> SnowflakeGenerator<EPOCH> {
     }
 
     #[cfg_attr(feature = "tracing", instrument(name = "SnowflakeGenerator::generate", level="trace"))]
-    pub fn generate(&self) -> Snowflake {
+    pub fn generate(&self) -> Snowflake<EPOCH> {
         let (timestamp, counter) = {
             let mut state = match self.state_mutex.lock() {
                 Ok(state) => state,
