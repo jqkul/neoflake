@@ -13,3 +13,14 @@ mod generator;
 
 pub use snowflake::Snowflake;
 pub use generator::SnowflakeGenerator;
+
+#[cfg(feature = "setup")]
+#[macro_export]
+macro_rules! setup {
+    ($flakename:ident, $epoch:expr, $genname:ident, $unique_id:expr) => {
+        type $flakename = global_snowflake::Snowflake<{$epoch}>;
+        lazy_static::lazy_static! {
+            pub static ref $genname: global_snowflake::SnowflakeGenerator<{$epoch}> = global_snowflake::SnowflakeGenerator::new($unique_id);
+        }
+    };
+}

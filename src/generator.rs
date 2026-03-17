@@ -135,6 +135,7 @@ fn wait_for_next_ms(mut current: u64, target: u64, epoch: u64) -> u64 {
 }
 
 #[cfg(test)]
+#[allow(unused_imports)]
 mod tests {
     use super::*;
     use crate::{DISCORD_EPOCH, TWITTER_EPOCH, Snowflake};
