@@ -47,10 +47,17 @@ pub use generator::SnowflakeGenerator;
 /// 
 /// ## Usage
 /// ```
+/// # use global_snowflake::setup;
+/// # const MY_EPOCH: u64 = 1;
+/// # const UNIQUE_ID: u16 = 7;
 /// setup!(MySnowflake, MY_EPOCH, FLAKE_GEN, UNIQUE_ID);
 /// ```
 /// expands to:
 /// ```
+/// # use global_snowflake::{Snowflake, SnowflakeGenerator};
+/// # use lazy_static::lazy_static;
+/// # const MY_EPOCH: u64 = 1;
+/// # const UNIQUE_ID: u16 = 7;
 /// type MySnowflake = Snowflake<MY_EPOCH>;
 /// lazy_static! {
 ///     pub static ref FLAKE_GEN: SnowflakeGenerator<MY_EPOCH> = SnowflakeGenerator::new(UNIQUE_ID);
