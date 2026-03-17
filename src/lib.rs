@@ -29,6 +29,9 @@ pub const DISCORD_EPOCH: u64 = 1420070400000;
 /// [publicly available 2010 implementation](https://github.com/twitter-archive/snowflake/blob/snowflake-2010/src/main/scala/com/twitter/service/snowflake/IdWorker.scala).
 pub const TWITTER_EPOCH: u64 = 1288834974657;
 
+/// The Unix epoch. Provided for convenience.
+pub const UNIX_EPOCH: u64 = 0;
+
 mod snowflake;
 mod generator;
 
