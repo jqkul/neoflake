@@ -43,13 +43,13 @@ impl<const EPOCH: u64> Snowflake<EPOCH> {
     }
 }
 
-impl From<u64> for Snowflake {
+impl<const EPOCH: u64> From<u64> for Snowflake<EPOCH> {
     fn from(value: u64) -> Self {
         Snowflake(value)
     }
 }
 
-impl std::str::FromStr for Snowflake {
+impl<const EPOCH: u64> std::str::FromStr for Snowflake<EPOCH> {
     type Err = std::num::ParseIntError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Snowflake(s.parse()?))
