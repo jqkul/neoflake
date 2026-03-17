@@ -2,42 +2,79 @@ use chrono::{DateTime, Utc};
 
 use crate::DISCORD_EPOCH;
 
-/// A Discord-style snowflake ID.
+/// A snowflake id.
 /// 
-/// EPOCH is in milliseconds, relative to the Unix epoch.
+/// EPOCH is in milliseconds as an offset from the Unix epoch.
+/// 
+/// Snowflakes are just a `u64` internally, and can more or less be treated like an opaque number:
+/// you can compare them, hash them, etc. Sorting an array of snowflakes will sort them roughly by when
+/// they were generated, even if they were generated on different machines.
+/// 
+/// ## Bit ranges
+/// 
+/// | Bit range | Number of bits | Mask        | Contents                    |
+/// |-----------|----------------|-------------|-----------------------------|
+/// | 63-22     | 42             | `!0x3FFFFF` | epoch-relative timestamp    |
+/// | 21-12     | 10             | `0x3FF000`  | unique id                   |
+/// | 11-0      | 12             | `0xFFF`     | intra-millisecond increment |
+/// 
+/// Discord and Twitter both split the unique id into two 5-bit fields
+/// (worker id and process id for Discord and datacenter id and worker id for Twitter).
+/// This crate is not opinionated about server architecture,
+/// and as such does not make assumptions about how you use the 10 bits of `unique_id` so long as it is unique,
+/// but does provide `worker_id` and `process_id` methods consistent with Discord's terminology for convenience.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Snowflake<const EPOCH: u64 = DISCORD_EPOCH>(u64);
 
 impl<const EPOCH: u64> Snowflake<EPOCH> {
+    /// Gets the snowflake's embedded timestamp, relative to `EPOCH`.
+    /// 
+    /// Note that all epoch information is lost in this conversion,
+    /// so make sure you're converting it yourself.
+    /// [`timestamp_unix`](Snowflake::timestamp_unix) 
+    /// and [`time`](Snowflake::time)
+    /// provide ways of reliably extracting the absolute date and time.
     pub fn timestamp(self) -> u64 {
         self.0 >> 22
     }
 
+    /// Gets the snowflake's embedded timestamp as a standard Unix timestamp relative to the Unix epoch, in milliseconds.
     pub fn timestamp_unix(self) -> u64 {
         self.timestamp().checked_add(EPOCH).expect("Should not happen for 100 years!")
     }
 
+    /// Gets the snowflake's embedded timestamp as a `DateTime` from the [`chrono`](https://docs.rs/chrono) crate.
     pub fn time(self) -> Result<DateTime<Utc>, MalformedSnowflakeError> {
         DateTime::from_timestamp_millis(self.timestamp_unix() as i64)
             .ok_or(MalformedSnowflakeError(self.0))
     }
 
+    /// Gets the unique id of the [`SnowflakeGenerator`](crate::SnowflakeGenerator) that generated this snowflake.
     pub fn unique_id(self) -> u16 {
         ((self.0 & 0x3FF000) >> 12) as u16
     }
 
+    /// Gets the upper 5 bits of the unique id, consistent with Discord's worker id.
+    /// Provided for convenience.
     pub fn worker_id(self) -> u8 {
         ((self.0 & 0x3E0000) >> 17) as u8
     }
 
+    /// Gets the lower 5 bits of the unique id, consistent with Discord's process id.
+    /// Provided for convenience.
     pub fn process_id(self) -> u8 {
         ((self.0 & 0x1F000) >> 12) as u8
     }
 
+    /// Gets the intra-millisecond increment of this snowflake.
+    /// 
+    /// The only purpose of these bits is to ensure uniqueness on the same generator,
+    /// so there's not much use for isolating them, but it's here for completeness.
     pub fn increment(self) -> u16 {
         (self.0 & 0xFFF) as u16
     }
 
+    /// Gets the full inner `u64` value of this snowflake.
     pub fn into_inner(self) -> u64 {
         self.0
     }
