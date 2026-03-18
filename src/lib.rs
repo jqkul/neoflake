@@ -10,6 +10,21 @@
 //! the counter that ensures flakes generated in the same millisecond are unique only has 10 bits to work with,
 //! so if the generator would go faster it has to pause briefly to wait for the next millisecond.
 //! 
+//! ## Basic example
+//!
+//! ```
+//! use neoflake::SnowflakeGenerator;
+//! 
+//! let unique_id: u16 = 47;
+//! let snow_machine: SnowflakeGenerator = SnowflakeGenerator::new(unique_id);
+//! let flake1 = snow_machine.generate();
+//! let flake2 = snow_machine.generate();
+//! 
+//! assert!(flake1 < flake2);
+//! assert_eq!(flake1.unique_id(), 47);
+//! assert_eq!(flake1.unique_id(), flake2.unique_id());
+//! ```
+//! 
 //! ## Features
 //! The `setup` feature enables the [`setup`] macro.
 //! It is enabled by default, but can be removed;
@@ -30,7 +45,6 @@ pub const DISCORD_EPOCH: u64 = 1420070400000;
 pub const TWITTER_EPOCH: u64 = 1288834974657;
 
 /// The [Unix epoch](https://en.wikipedia.org/wiki/Unix_time).
-/// Provided for convenience.
 pub const UNIX_EPOCH: u64 = 0;
 
 mod snowflake;
@@ -48,22 +62,38 @@ pub use generator::SnowflakeGenerator;
 /// and not have to pass anything around.
 /// `SnowflakeGenerator` uses a `Mutex` internally, so it's thread-safe.
 /// 
-/// ## Usage
+/// ## Example
+/// 
+/// ```rust
+/// use neoflake::setup;
+/// 
+/// const UNIQUE_ID: u16 = 47;
+/// const MY_CUSTOM_EPOCH: u64 = 1767225600000;
+/// setup!(MyFlake, SNOW_MACHINE, MY_CUSTOM_EPOCH, UNIQUE_ID);
+///
+/// fn main() {
+///     let flake1: MyFlake = SNOW_MACHINE.generate();
+///     let flake2: MyFlake = SNOW_MACHINE.generate();
+///     assert_eq!(flake1.epoch(), MY_CUSTOM_EPOCH);
+/// }
+/// ```
+/// 
+/// ## Expansion
 /// ```
 /// # use neoflake::setup;
-/// # const MY_EPOCH: u64 = 1;
+/// # const MY_CUSTOM_EPOCH: u64 = 1;
 /// # const UNIQUE_ID: u16 = 7;
-/// setup!(MySnowflake, FLAKE_GEN, MY_EPOCH, UNIQUE_ID);
+/// setup!(MySnowflake, FLAKE_GEN, MY_CUSTOM_EPOCH, UNIQUE_ID);
 /// ```
 /// expands to:
 /// ```
 /// # use neoflake::{Snowflake, SnowflakeGenerator};
 /// # use lazy_static::lazy_static;
-/// # const MY_EPOCH: u64 = 1;
+/// # const MY_CUSTOM_EPOCH: u64 = 1;
 /// # const UNIQUE_ID: u16 = 7;
-/// type MySnowflake = Snowflake<MY_EPOCH>;
+/// type MySnowflake = Snowflake<MY_CUSTOM_EPOCH>;
 /// lazy_static! {
-///     pub static ref FLAKE_GEN: SnowflakeGenerator<MY_EPOCH> = SnowflakeGenerator::new(UNIQUE_ID);
+///     pub static ref FLAKE_GEN: SnowflakeGenerator<MY_CUSTOM_EPOCH> = SnowflakeGenerator::new(UNIQUE_ID);
 /// }
 /// ```
 #[cfg(feature = "setup")]
