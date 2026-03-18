@@ -44,6 +44,9 @@ pub use generator::SnowflakeGenerator;
 /// Creates a type alias for a `Snowflake` with a specific `EPOCH` value,
 /// and creates a global snowflake generator with the same `EPOCH` wrapped in a
 /// [`lazy_static`](https://docs.rs/lazy_static).
+/// This is useful when you want all threads in your application to share one generator
+/// and not have to pass anything around.
+/// `SnowflakeGenerator` uses a `Mutex` internally, so it's thread-safe.
 /// 
 /// ## Usage
 /// ```

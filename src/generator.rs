@@ -9,8 +9,9 @@ use crate::{Snowflake, DISCORD_EPOCH};
 #[cfg(feature = "tracing")]
 use tracing::{instrument, event, Level};
 
-/// A generator for Discord-style snowflakes.
+/// A generator for snowflake ids.
 /// 
+/// See [`Snowflake`] for details about the format and guarantees.
 #[derive(Debug)]
 pub struct SnowflakeGenerator<const EPOCH: u64 = DISCORD_EPOCH> {
     // 10 bits, represents the worker and process id of Discord's snowflakes
@@ -19,6 +20,10 @@ pub struct SnowflakeGenerator<const EPOCH: u64 = DISCORD_EPOCH> {
 }
 
 impl<const EPOCH: u64> SnowflakeGenerator<EPOCH> {
+    /// Creates a new `SnowflakeGenerator` with the provided unique id.
+    /// 
+    /// Only the bottom 10 bits of `unique_id` are used; the top 6 are discarded.
+    /// Thus, only values 0–1023 make sense to use.
     pub const fn new(unique_id: u16) -> SnowflakeGenerator<EPOCH> {
         SnowflakeGenerator {
             unique_id: (unique_id & 0x3FF) as u64,
@@ -29,10 +34,21 @@ impl<const EPOCH: u64> SnowflakeGenerator<EPOCH> {
         }
     }
 
+    /// Creates a new `SnowflakeGenerator`, assembling `worker_id` and `process_id` into a unique id.
+    /// 
+    /// Uses the Discord convention of worker id being the upper 5 bits and process id being the lower 5 bits.
+    /// The upper 3 bits of both arguments are discarded.
+    /// Thus, only values 0–31 make sense to use.
     pub const fn from_worker_and_process_ids(worker_id: u8, process_id: u8) -> SnowflakeGenerator<EPOCH> {
         SnowflakeGenerator::new(((worker_id & 0b11111) as u16) << 5 | ((process_id & 0b11111) as u16))
     }
 
+    /// Generate a new snowflake id.
+    /// 
+    /// The generated snowflake is guaranteed to be unique across all generators,
+    /// so long as they each have a different unique id.
+    /// Its timestamp will be when this method was called,
+    /// and its unique id will be that of this generator.
     #[cfg_attr(feature = "tracing", instrument(name = "SnowflakeGenerator::generate", level="trace"))]
     pub fn generate(&self) -> Snowflake<EPOCH> {
         let (timestamp, counter) = {
