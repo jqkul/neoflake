@@ -30,6 +30,9 @@
 //! It is enabled by default, but can be removed;
 //! the main reason you might want to do this is to remove the dependency on `lazy_static`.
 //! 
+//! The `serde` feature implements [`serde`](https://docs.rs/serde)'s
+//! `Serialize` and `Deserialize` for `Snowflake`.
+//! 
 //! The `tracing` feature enables hooks for the [`tracing`](https://docs.rs/tracing) crate.
 
 /// The epoch used by Discord's snowflake ids.
