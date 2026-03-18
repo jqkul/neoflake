@@ -1,5 +1,5 @@
 [package]
-name = "snowflake64"
+name = "neoflake"
 description = "Generate Twitter/Discord-style unique ids quickly and scalably"
 authors = ["Jacqueline Kulas"]
 license = "MIT"
