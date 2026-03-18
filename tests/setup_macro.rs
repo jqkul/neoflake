@@ -2,7 +2,7 @@ use chrono::{DateTime, TimeDelta, Utc};
 
 const MY_EPOCH: u64 = 1767225600000;
 
-neoflake::setup!(Snowflake, MY_EPOCH, SNOWFLAKE_GEN, 0);
+neoflake::setup!(Snowflake, SNOWFLAKE_GEN, MY_EPOCH, 0);
 
 #[test]
 fn setup_uses_correct_epoch() {

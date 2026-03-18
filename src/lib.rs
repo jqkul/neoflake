@@ -53,7 +53,7 @@ pub use generator::SnowflakeGenerator;
 /// # use neoflake::setup;
 /// # const MY_EPOCH: u64 = 1;
 /// # const UNIQUE_ID: u16 = 7;
-/// setup!(MySnowflake, MY_EPOCH, FLAKE_GEN, UNIQUE_ID);
+/// setup!(MySnowflake, FLAKE_GEN, MY_EPOCH, UNIQUE_ID);
 /// ```
 /// expands to:
 /// ```
@@ -69,7 +69,7 @@ pub use generator::SnowflakeGenerator;
 #[cfg(feature = "setup")]
 #[macro_export]
 macro_rules! setup {
-    ($snowflake_type_name:ident, $epoch:expr, $global_generator_name:ident, $unique_id:expr) => {
+    ($snowflake_type_name:ident, $global_generator_name:ident, $epoch:expr, $unique_id:expr) => {
         type $snowflake_type_name = neoflake::Snowflake<{$epoch}>;
         lazy_static::lazy_static! {
             pub static ref $global_generator_name: neoflake::SnowflakeGenerator<{$epoch}> = neoflake::SnowflakeGenerator::new($unique_id);
