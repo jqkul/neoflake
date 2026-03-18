@@ -1,5 +1,8 @@
 [package]
 name = "snowflake64"
+description = "Generate Twitter/Discord-style unique ids quickly and scalably"
+authors = ["Jacqueline Kulas"]
+license = "MIT"
 version = "0.1.0"
 edition = "2024"
 
