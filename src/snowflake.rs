@@ -78,6 +78,14 @@ impl<const EPOCH: u64> Snowflake<EPOCH> {
         (self.0 & 0xFFF) as u16
     }
 
+    /// Returns the epoch that this snowflake's timestamp is relative to.
+    /// 
+    /// This information is encoded in a const generic parameter,
+    /// so there aren't many scenarios where this won't be known until runtime.
+    pub fn epoch(self) -> u64 {
+        EPOCH
+    }
+
     /// Gets the full inner `u64` value of this snowflake.
     pub fn into_inner(self) -> u64 {
         self.0
