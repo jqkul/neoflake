@@ -6,7 +6,7 @@ license = "MIT"
 version = "0.1.0"
 edition = "2024"
 repository = "https://github.com/jqkul/neoflake"
-keywords = ["id", "uid", "unique", "snowflake", "twitter", "discord"]
+keywords = ["id", "unique", "snowflake", "twitter", "discord"]
 categories = ["algorithms", "date-and-time"]
 
 [dependencies]
