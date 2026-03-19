@@ -25,7 +25,11 @@ use crate::DISCORD_EPOCH;
 /// but does provide `worker_id` and `process_id` methods consistent with Discord's terminology for convenience.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Snowflake<const EPOCH: u64 = DISCORD_EPOCH>(u64);
+#[cfg_attr(feature = "serde", serde(transparent))]
+pub struct Snowflake<const EPOCH: u64 = DISCORD_EPOCH>(
+    #[cfg_attr(feature = "serde", serde(deserialize_with = "serde_aux::field_attributes::deserialize_number_from_string"))]
+    u64
+);
 
 impl<const EPOCH: u64> Snowflake<EPOCH> {
     /// Gets the snowflake's embedded timestamp, relative to `EPOCH`.
