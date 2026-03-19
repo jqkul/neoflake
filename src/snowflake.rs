@@ -126,6 +126,7 @@ pub struct InvalidTimestampError(u64);
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rand::Rng;
 
     const RAND_TEST_ITERATIONS: usize = 1000;
 
@@ -148,7 +149,7 @@ mod tests {
 
         #[test]
         fn time() {
-            use chrono::{Utc, TimeDelta};
+            use chrono::{Utc, TimeDelta, TimeZone};
             assert!(
                 TEST_MSG.time().unwrap()
                 - Utc.with_ymd_and_hms(2019, 10, 20, 12, 34, 40).unwrap()
@@ -206,8 +207,6 @@ mod tests {
 
     #[cfg(feature = "serde")]
     mod serde {
-        use rand::Rng;
-
         use super::*;
 
         #[test]
