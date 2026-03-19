@@ -129,6 +129,81 @@ mod tests {
 
     const RAND_TEST_ITERATIONS: usize = 1000;
 
+    mod extractors {
+
+        use super::*;
+
+        // a real discord snowflake of a real message
+        const TEST_MSG: Snowflake = Snowflake(635274652796715031);
+
+        #[test]
+        fn timestamp() {
+            assert_eq!(TEST_MSG.timestamp(), 151461280059);
+        }
+
+        #[test]
+        fn timestamp_unix() {
+            assert_eq!(TEST_MSG.timestamp_unix(), 1571531680059);
+        }
+
+        #[test]
+        fn time() {
+            use chrono::{Utc, TimeDelta};
+            assert!(
+                TEST_MSG.time().unwrap()
+                - Utc.with_ymd_and_hms(2019, 10, 20, 12, 34, 40).unwrap()
+                < TimeDelta::seconds(1)
+            );
+        }
+
+        #[test]
+        fn unique_id() {
+            assert_eq!(TEST_MSG.unique_id(), 32);
+        }
+
+        #[test]
+        fn worker_id() {
+            assert_eq!(TEST_MSG.worker_id(), 1);
+        }
+
+        #[test]
+        fn process_id() {
+            assert_eq!(TEST_MSG.process_id(), 0);
+        }
+
+        #[test]
+        fn increment() {
+            assert_eq!(TEST_MSG.increment(), 23);
+        }
+
+        #[test]
+        fn roundtrip() {
+            let mut rng = rand::rng();
+            for _ in 0..RAND_TEST_ITERATIONS {
+                let flake: Snowflake = Snowflake(rng.next_u64());
+                assert_eq!(flake, Snowflake(
+                    flake.timestamp() << 22
+                    | (flake.unique_id() as u64) << 12
+                    | flake.increment() as u64
+                ));
+            }
+        }
+
+        #[test]
+        fn roundtrip_with_worker_and_process_ids() {
+            let mut rng = rand::rng();
+            for _ in 0..RAND_TEST_ITERATIONS {
+                let flake: Snowflake = Snowflake(rng.next_u64());
+                assert_eq!(flake, Snowflake(
+                    flake.timestamp() << 22
+                    | (flake.worker_id() as u64) << 17
+                    | (flake.process_id() as u64) << 12
+                    | flake.increment() as u64
+                ));
+            }
+        }
+    }
+
     #[cfg(feature = "serde")]
     mod serde {
         use rand::Rng;
