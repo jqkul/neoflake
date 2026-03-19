@@ -24,7 +24,7 @@ use crate::DISCORD_EPOCH;
 /// and as such does not make assumptions about how you use the 10 bits of `unique_id` so long as it is unique,
 /// but does provide `worker_id` and `process_id` methods consistent with Discord's terminology for convenience.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(transparent))]
 pub struct Snowflake<const EPOCH: u64 = DISCORD_EPOCH>(
     #[cfg_attr(feature = "serde", serde(deserialize_with = "serde_aux::field_attributes::deserialize_number_from_string"))]
@@ -107,6 +107,15 @@ impl<const EPOCH: u64> std::str::FromStr for Snowflake<EPOCH> {
     type Err = std::num::ParseIntError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Snowflake(s.parse()?))
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<const EPOCH: u64> serde::Serialize for Snowflake<EPOCH> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: serde::Serializer {
+        serializer.serialize_str(&format!("{}", self.0))
     }
 }
 
