@@ -104,8 +104,12 @@ pub use generator::SnowflakeGenerator;
 macro_rules! setup {
     ($snowflake_type_name:ident, $global_generator_name:ident, $epoch:expr, $unique_id:expr) => {
         type $snowflake_type_name = neoflake::Snowflake<{$epoch}>;
-        lazy_static::lazy_static! {
+        neoflake::__lazy_static! {
             pub static ref $global_generator_name: neoflake::SnowflakeGenerator<{$epoch}> = neoflake::SnowflakeGenerator::new($unique_id);
         }
     };
 }
+
+#[cfg(feature = "setup")]
+#[doc(hidden)]
+pub use lazy_static::lazy_static as __lazy_static;
