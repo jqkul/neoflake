@@ -122,3 +122,56 @@ impl<const EPOCH: u64> serde::Serialize for Snowflake<EPOCH> {
 #[derive(Debug, Clone, Copy, thiserror::Error)]
 #[error("invalid snowflake timestamp {0}")]
 pub struct InvalidTimestampError(u64);
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const RAND_TEST_ITERATIONS: usize = 1000;
+
+    #[cfg(feature = "serde")]
+    mod serde {
+        use rand::Rng;
+
+        use super::*;
+
+        #[test]
+        fn serialize_json() {
+            let mut rng = rand::rng();
+            for _ in 0..RAND_TEST_ITERATIONS {
+                let x = rng.next_u64();
+                let flake: Snowflake = Snowflake(x);
+                let json = serde_json::to_string(&flake).unwrap();
+                assert_eq!(
+                    format!("\"{}\"", x),
+                    json
+                );
+            }
+        }
+
+        #[test]
+        fn deserialize_json() {
+            let mut rng = rand::rng();
+            for _ in 0..RAND_TEST_ITERATIONS {
+                let x = rng.next_u64();
+                let json = format!("\"{}\"", x);
+                let flake: Snowflake = serde_json::from_str(&json).unwrap();
+                assert_eq!(
+                    x,
+                    flake.into_inner()
+                );
+            }
+        }
+
+        #[test]
+        fn roundtrip_json() {
+            let mut rng = rand::rng();
+            for _ in 0..RAND_TEST_ITERATIONS {
+                let flake1: Snowflake = Snowflake(rng.next_u64());
+                let json = serde_json::to_string(&flake1).unwrap();
+                let flake2: Snowflake = serde_json::from_str(&json).unwrap();
+                assert_eq!(flake1, flake2);
+            }
+        }
+    }
+}
